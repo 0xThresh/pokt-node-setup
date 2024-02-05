@@ -51,7 +51,7 @@ cd .pocket/data
 # Download snapshot file in the background
 wget -O latest.txt https://pocket-snapshot.liquify.com/files/latest.txt
 latestFile=$(cat latest.txt)
-{ aria2c -s6 -x6 "https://pocket-snapshot.liquify.com/files/$latestFile"; tar xvf "$latestFile" -C /mnt/data/.pocket/data; } &
+wget -c "https://pocket-snapshot.liquify.com/files/$latestFile" -O - | tar -xv -C /mnt/data/.pocket/data
 rm latest.txt
 
 # Make sure all files are owned by the Pocket user before continuing 
