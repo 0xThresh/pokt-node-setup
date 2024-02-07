@@ -1,0 +1,15 @@
+{
+  "name": "web3-pulumi-demo",
+  "description": "A custom Express container stored in ECR that is hosted on an ECS service behind an ALB. The ALB listener is listening on port 80 and forwards to container port 8080",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "dependencies": {
+    "@pulumi/aws": "^6.13.3",
+    "@pulumi/awsx": "^1.0.6",
+    "@pulumi/pulumi": "^3.104.2",
+    "@types/aws-sdk": "^2.7.0"
+  }
+}

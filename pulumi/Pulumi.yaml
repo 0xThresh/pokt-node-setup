@@ -1,0 +1,3 @@
+name: pocket-node
+runtime: nodejs
+description: Creates the required AWS infrastructure to build a Pocket Node 
