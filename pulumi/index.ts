@@ -2,6 +2,18 @@ import * as awsx from "@pulumi/awsx";
 import * as pulumi from "@pulumi/pulumi";
 import * as aws from "@pulumi/aws";
 import * as fs from "fs";
+import * as dotenv from "dotenv";
+
+// Load variables from .env
+dotenv.config();
+
+// Retrieve hostname from .env variables
+const hostname = process.env.HOSTNAME as string;
+
+// Validate that HOSTNAME is properly loaded from .env
+if (!hostname) {
+    throw new Error("The HOSTNAME environment variable must be set in the .env file.");
+  }
 
 // VPC
 const vpc = new awsx.ec2.Vpc("pulumi-vpc", {
@@ -56,7 +68,9 @@ const ubuntuAMI = aws.ec2.getAmi({
     mostRecent: true,
 }).then(ami => ami.imageId);
 
-const userData = fs.readFileSync("userdata.sh");
+const userDataTemplate = fs.readFileSync("userdata.sh", "utf8");
+
+const userData = userDataTemplate.replace("${HOSTNAME}", hostname);
 
 const instance = new aws.ec2.Instance("instance", {
     ami: ubuntuAMI, 
@@ -74,3 +88,17 @@ const instance = new aws.ec2.Instance("instance", {
   },
 });
 
+// Route53 Record
+const r53_zone = aws.route53.getZone({
+    name: hostname,
+    privateZone: true,
+}).then(r53_zone => r53_zone.id);
+;
+
+const pokt = new aws.route53.Record("pokt001", {
+    zoneId: r53_zone,
+    name: "www.example.com",
+    type: "A",
+    ttl: 300,
+    records: [instance.publicIp],
+});

@@ -61,14 +61,15 @@ cp /mnt/data/.pocket/config/config.json /mnt/data/.pocket/config/config.json.bak
 
 # Insert seeds into config
 export SEEDS=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-seeds/main/mainnet.txt \
-| tr '\n' ',' \
-| sed 's/,*$//')
+tr '\n' ',' \
+sed 's/,*$//')
+
 pocket util print-configs \
-| jq --arg seeds "$SEEDS" '.tendermint_config.P2P.Seeds = $seeds' \
-| jq '.pocket_config.rpc_timeout = 15000' \
-| jq '.pocket_config.rpc_port = "8082"' \
-| jq '.pocket_config.remote_cli_url = "http://localhost:8082"' \
-| jq . > ~/.pocket/config/config.json
+jq --arg seeds "$SEEDS" '.tendermint_config.P2P.Seeds = $seeds' \
+jq '.pocket_config.rpc_timeout = 15000' \
+jq '.pocket_config.rpc_port = "8082"' \
+jq '.pocket_config.remote_cli_url = "http://localhost:8082"' \
+jq . > ~/.pocket/config/config.json
 
 # Create chains.json using default settings
 # TODO: Use 'pocket util', not doing that for now since it requires user input 
@@ -115,3 +116,6 @@ sudo chown -R pocket /mnt/data
 systemctl daemon-reload
 systemctl enable pocket.service
 systemctl start pocket.service
+
+# Register the cert with your domain
+sudo certbot --nginx --domain ${HOSTNAME} --register-unsafely-without-email --no-redirect --agree-tos
