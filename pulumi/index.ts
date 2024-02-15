@@ -10,10 +10,10 @@ dotenv.config();
 //const VALID_NODE_TYPES = ['VALIDATOR', 'SERVICER', 'FULL_NODE']
 
 // Retrieve HOSTNAME from .env variables
-const HOSTNAME = process.env.HOSTNAME as string;
+const DNS_HOSTNAME = process.env.HOSTNAME as string;
 
 // Validate that HOSTNAME is properly loaded from .env
-if (!HOSTNAME) {
+if (!DNS_HOSTNAME) {
     throw new Error("The HOSTNAME environment variable must be set in the .env file.");
   }
 
@@ -105,7 +105,7 @@ const ubuntuAMI = aws.ec2.getAmi({
 
 const userDataTemplate = fs.readFileSync("userdata.sh", "utf8");
 
-const userData = userDataTemplate.replace("${HOSTNAME}", HOSTNAME);
+const userData = userDataTemplate.replace("${DNS_HOSTNAME}", DNS_HOSTNAME);
 
 const instance = new aws.ec2.Instance("instance", {
     ami: ubuntuAMI, 
@@ -126,14 +126,14 @@ const instance = new aws.ec2.Instance("instance", {
 
 // Route53 Record
 const r53_zone = aws.route53.getZone({
-    name: HOSTNAME,
+    name: DNS_HOSTNAME,
     privateZone: false,
 }).then(r53_zone => r53_zone.id);
 ;
 
 const pokt = new aws.route53.Record("pokt001", {
     zoneId: r53_zone,
-    name: `pokt001.${HOSTNAME}`,
+    name: `pokt001.${DNS_HOSTNAME}`,
     type: "A",
     ttl: 300,
     records: [instance.publicIp],

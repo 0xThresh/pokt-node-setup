@@ -12,34 +12,34 @@ useradd -m -g sudo -s /bin/bash pocket
 POKT_VERSION="RC-0.11.1" 
 
 # When using AWS, skip volume mount 
-sudo mkdir /mnt/data
+mkdir /mnt/data
 
 # Move the home directory to the location of the data directory
-sudo usermod -d /mnt/data pocket 
+usermod -d /mnt/data pocket 
 
 # Update system packages
-sudo apt update
-sudo apt dist-upgrade -y
+apt update
+apt dist-upgrade -y
 
 # Download required packages
-sudo apt-get install -y git build-essential curl file nginx certbot python3-certbot-nginx jq aria2
+apt-get install -y git build-essential curl file nginx certbot python3-certbot-nginx jq aria2
 
 # Download Go
 cd /mnt/data 
 wget https://dl.google.com/go/go1.19.2.linux-amd64.tar.gz
-sudo tar -xf go1.19.2.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/mnt/data/go/bin' >> /mnt/data/.profile
-echo 'export GOPATH=/mnt/data/go' >> /mnt/data/.profile
-echo 'export GOBIN=/mnt/data/go/bin' >> /mnt/data/.profile
-source /mnt/data/.profile
+tar -xf go1.19.2.linux-amd64.tar.gz
+echo 'export PATH=$PATH:/mnt/data/go/bin' >> /mnt/data/.bash_profile
+echo 'export GOPATH=/mnt/data/go' >> /mnt/data/.bash_profile
+echo 'export GOBIN=/mnt/data/go/bin' >> /mnt/data/.bash_profile
+source /mnt/data/.bash_profile
 export HOME=/mnt/data
 
 # Download Pocket 
-sudo mkdir -p /mnt/data/go/src/github.com/pokt-network
+mkdir -p /mnt/data/go/src/github.com/pokt-network
 cd /mnt/data/go/src/github.com/pokt-network
-sudo git clone https://github.com/pokt-network/pocket-core.git
+git clone https://github.com/pokt-network/pocket-core.git
 cd pocket-core
-sudo git checkout tags/$POKT_VERSION
+git checkout tags/$POKT_VERSION
 go build -o /mnt/data/go/bin/pocket /mnt/data/go/src/github.com/pokt-network/pocket-core/app/cmd/pocket_core/main.go
 
 # TODO: Only continue if var below isn't null to ensure setup worked correctly 
@@ -53,10 +53,7 @@ cd .pocket/data
 
 # Download snapshot file in the background
 # TODO: Choose the file to download based on node type passed into script 
-wget -O latest.txt https://pocket-snapshot.liquify.com/files/pruned/latest.txt
-latestFile=$(cat latest.txt)
-wget -c "https://pocket-snapshot.liquify.com/files/pruned/$latestFile" -O - | tar -xv -C /mnt/data/.pocket
-rm latest.txt
+wget -c "https://pocket-snapshot.liquify.com/files/pruned/(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
 
 # TODO: Enter account creation steps 
 
@@ -111,7 +108,7 @@ WantedBy=default.target
 EOF
 
 # Make sure all files are owned by the Pocket user before continuing 
-sudo chown -R pocket /mnt/data
+chown -R pocket /mnt/data
 
 # Start the Pocket service
 systemctl daemon-reload
@@ -119,7 +116,7 @@ systemctl enable pocket.service
 systemctl start pocket.service
 
 # Register the cert with your domain
-sudo certbot --nginx --domain pokt001.${HOSTNAME} --register-unsafely-without-email --no-redirect --agree-tos
+certbot --nginx --domain pokt001.${DNS_HOSTNAME} --register-unsafely-without-email --no-redirect --agree-tos
 
 # Create the required NGINX config 
 cat << EOF > /etc/nginx/sites-available/pocket 
@@ -149,7 +146,7 @@ server {
 
     index index.html index.htm index.nginx-debian.html;
 
-    server_name pokt001.${HOSTNAME};
+    server_name pokt001.${DNS_HOSTNAME};
 
     location / {
         try_files $uri $uri/ =404;
@@ -158,8 +155,8 @@ server {
     listen [::]:443 ssl ipv6only=on;
     listen 443 ssl;
 
-    ssl_certificate /etc/letsencrypt/live/pokt001.${HOSTNAME}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/pokt001.${HOSTNAME}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/privkey.pem;
 
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
@@ -181,7 +178,20 @@ server {
 }
 EOF
 
-sudo systemctl stop nginx
-sudo rm /etc/nginx/sites-enabled/default
-sudo ln -s /etc/nginx/sites-available/pocket /etc/nginx/sites-enabled/pocket
-sudo systemctl start nginx
+systemctl stop nginx
+chown -R www-data /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/ 
+rm /etc/nginx/sites-enabled/default
+ln -s /etc/nginx/sites-available/pocket /etc/nginx/sites-enabled/pocket
+systemctl start nginx
+
+# Enable ufw rules
+ufw enable
+ufw default deny
+ufw allow ssh
+ufw allow 80
+ufw allow 443
+ufw allow 8081
+ufw allow 26656
+
+# Final setup
+pocket query height > /mnt/data/healthcheck.txt
