@@ -10,6 +10,7 @@ useradd -m -g sudo -s /bin/bash pocket
 
 # Set required vars
 POKT_VERSION="RC-0.11.1" 
+DNS_HOSTNAME=$(printenv DNS_HOSTNAME)
 
 # When using AWS, skip volume mount 
 mkdir /mnt/data
@@ -28,11 +29,10 @@ apt-get install -y git build-essential curl file nginx certbot python3-certbot-n
 cd /mnt/data 
 wget https://dl.google.com/go/go1.19.2.linux-amd64.tar.gz
 tar -xf go1.19.2.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/mnt/data/go/bin' >> /mnt/data/.bash_profile
-echo 'export GOPATH=/mnt/data/go' >> /mnt/data/.bash_profile
-echo 'export GOBIN=/mnt/data/go/bin' >> /mnt/data/.bash_profile
-source /mnt/data/.bash_profile
-export HOME=/mnt/data
+echo 'export PATH=$PATH:/mnt/data/go/bin' >> /mnt/data/.bashrc
+echo 'export GOPATH=/mnt/data/go' >> /mnt/data/.bashrc
+echo 'export GOBIN=/mnt/data/go/bin' >> /mnt/data/.bashrc
+source /mnt/data/.bashrc
 
 # Download Pocket 
 mkdir -p /mnt/data/go/src/github.com/pokt-network
@@ -53,9 +53,18 @@ cd .pocket/data
 
 # Download snapshot file in the background
 # TODO: Choose the file to download based on node type passed into script 
-wget -c "https://pocket-snapshot.liquify.com/files/pruned/(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
+#wget -c "https://pocket-snapshot.liquify.com/files/pruned/(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
 
-# TODO: Enter account creation steps 
+# Create script to create Pocket account and set as validator, then run as pocket user 
+cat << EOF > /mnt/data/create-pokt-account.sh 
+echo "${POCKET_ACCOUNT_PASSWORD}" | pocket accounts create
+ACCOUNTS=$(pocket accounts list)
+ADDRESS=$(echo "$ACCOUNTS" | grep -oE '\([0-9]+\)[[:space:]]+[a-fA-F0-9]+' | cut -d' ' -f2)
+echo "${POCKET_ACCOUNT_PASSWORD}" | pocket accounts set-validator $ADDRESS
+EOF
+
+chmod +x /mnt/data/create-pokt-account.sh 
+sudo -u pocket bash /mnt/data/create-pokt-account.sh
 
 # Insert seeds into config
 export SEEDS=$(curl -s https://raw.githubusercontent.com/pokt-network/pocket-seeds/main/mainnet.txt \
@@ -108,7 +117,7 @@ WantedBy=default.target
 EOF
 
 # Make sure all files are owned by the Pocket user before continuing 
-chown -R pocket /mnt/data
+chown -R pocket:sudo /mnt/data
 
 # Start the Pocket service
 systemctl daemon-reload
@@ -195,3 +204,4 @@ ufw allow 26656
 
 # Final setup
 pocket query height > /mnt/data/healthcheck.txt
+echo $DNS_HOSTNAME > /mnt/data/hostname.txt

@@ -9,12 +9,18 @@ dotenv.config();
 
 //const VALID_NODE_TYPES = ['VALIDATOR', 'SERVICER', 'FULL_NODE']
 
-// Retrieve HOSTNAME from .env variables
-const DNS_HOSTNAME = process.env.HOSTNAME as string;
+// Retrieve config from .env variables
+const DNS_HOSTNAME = process.env.DNS_HOSTNAME as string;
+const POCKET_ACCOUNT_PASSWORD = process.env.POCKET_ACCOUNT_PASSWORD as string;
 
-// Validate that HOSTNAME is properly loaded from .env
+// Validate that the hostname is properly loaded from .env
 if (!DNS_HOSTNAME) {
-    throw new Error("The HOSTNAME environment variable must be set in the .env file.");
+    throw new Error("The DNS_HOSTNAME environment variable must be set in the .env file.");
+  }
+
+// Validate that a password is set for Pocket account
+if (!POCKET_ACCOUNT_PASSWORD) {
+    throw new Error("The POCKET_ACCOUNT_PASSWORD environment variable must be set in the .env file.");
   }
 
 // VPC
@@ -104,7 +110,6 @@ const ubuntuAMI = aws.ec2.getAmi({
 }).then(ami => ami.imageId);
 
 const userDataTemplate = fs.readFileSync("userdata.sh", "utf8");
-
 const userData = userDataTemplate.replace("${DNS_HOSTNAME}", DNS_HOSTNAME);
 
 const instance = new aws.ec2.Instance("instance", {
