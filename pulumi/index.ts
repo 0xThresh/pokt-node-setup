@@ -114,10 +114,10 @@ const userData = userDataTemplate.replace("${DNS_HOSTNAME}", DNS_HOSTNAME);
 
 const instance = new aws.ec2.Instance("instance", {
     ami: ubuntuAMI, 
-    instanceType: "m6a.2xlarge",
+    instanceType: "m6a.xlarge",
     vpcSecurityGroupIds: [securityGroup.id], 
     subnetId: publicSubnetIds[0],
-    userData: userData.toString(),
+    //userData: userData.toString(),
     keyName: process.env.EC2_KEY_NAME,
     // TODO: Change root volume size based on node type 
     rootBlockDevice: {
@@ -125,7 +125,7 @@ const instance = new aws.ec2.Instance("instance", {
         volumeType: "gp3"
       },
   tags: {
-      "Name": "pokt001"
+      "Name": "pokt"
   },
 });
 
@@ -136,9 +136,9 @@ const r53_zone = aws.route53.getZone({
 }).then(r53_zone => r53_zone.id);
 ;
 
-const pokt = new aws.route53.Record("pokt001", {
+const pokt = new aws.route53.Record("pokt", {
     zoneId: r53_zone,
-    name: `pokt001.${DNS_HOSTNAME}`,
+    name: `pokt.${DNS_HOSTNAME}`,
     type: "A",
     ttl: 300,
     records: [instance.publicIp],

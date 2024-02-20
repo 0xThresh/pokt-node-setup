@@ -10,7 +10,6 @@ useradd -m -g sudo -s /bin/bash pocket
 
 # Set required vars
 POKT_VERSION="RC-0.11.1" 
-DNS_HOSTNAME=$(printenv DNS_HOSTNAME)
 
 # When using AWS, skip volume mount 
 mkdir /mnt/data
@@ -33,6 +32,8 @@ echo 'export PATH=$PATH:/mnt/data/go/bin' >> /mnt/data/.bashrc
 echo 'export GOPATH=/mnt/data/go' >> /mnt/data/.bashrc
 echo 'export GOBIN=/mnt/data/go/bin' >> /mnt/data/.bashrc
 source /mnt/data/.bashrc
+export HOME=/mnt/data
+DNS_HOSTNAME=${DNS_HOSTNAME}
 
 # Download Pocket 
 mkdir -p /mnt/data/go/src/github.com/pokt-network
@@ -56,7 +57,7 @@ cd .pocket/data
 #wget -c "https://pocket-snapshot.liquify.com/files/pruned/(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
 
 # Create script to create Pocket account and set as validator, then run as pocket user 
-cat << EOF > /mnt/data/create-pokt-account.sh 
+cat <<EOF > /mnt/data/create-pokt-account.sh 
 echo "${POCKET_ACCOUNT_PASSWORD}" | pocket accounts create
 ACCOUNTS=$(pocket accounts list)
 ADDRESS=$(echo "$ACCOUNTS" | grep -oE '\([0-9]+\)[[:space:]]+[a-fA-F0-9]+' | cut -d' ' -f2)
@@ -80,7 +81,7 @@ pocket util print-configs \
 
 # Create chains.json using default settings
 # TODO: Use 'pocket util', not doing that for now since it requires user input 
-cat << EOF > /mnt/data/.pocket/config/chains.json
+cat <<EOF > /mnt/data/.pocket/config/chains.json
 [
   {
     "id": "0001",
@@ -100,7 +101,7 @@ wget https://raw.githubusercontent.com/pokt-network/pocket-network-genesis/maste
 # Increase pocket user's ulimit 
 echo "pocket soft nofile 16384" >> /etc/security/limits.conf
 
-cat << EOF > /etc/systemd/system/pocket.service
+cat <<EOF > /etc/systemd/system/pocket.service
 [Unit]
 Description=Pocket Service
 After=network.target mnt-data.mount
@@ -125,10 +126,10 @@ systemctl enable pocket.service
 systemctl start pocket.service
 
 # Register the cert with your domain
-certbot --nginx --domain pokt001.${DNS_HOSTNAME} --register-unsafely-without-email --no-redirect --agree-tos
+certbot --nginx --domain pokt001.$DNS_HOSTNAME --register-unsafely-without-email --no-redirect --agree-tos
 
 # Create the required NGINX config 
-cat << EOF > /etc/nginx/sites-available/pocket 
+cat <<EOF > /etc/nginx/sites-available/pocket 
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
@@ -155,7 +156,7 @@ server {
 
     index index.html index.htm index.nginx-debian.html;
 
-    server_name pokt001.${DNS_HOSTNAME};
+    server_name pokt001.$DNS_HOSTNAME;
 
     location / {
         try_files $uri $uri/ =404;
@@ -164,8 +165,8 @@ server {
     listen [::]:443 ssl ipv6only=on;
     listen 443 ssl;
 
-    ssl_certificate /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/pokt001.$DNS_HOSTNAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/pokt001.$DNS_HOSTNAME/privkey.pem;
 
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
@@ -188,7 +189,7 @@ server {
 EOF
 
 systemctl stop nginx
-chown -R www-data /etc/letsencrypt/live/pokt001.${DNS_HOSTNAME}/ 
+chown -R www-data /etc/letsencrypt/live/pokt001.$DNS_HOSTNAME
 rm /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/pocket /etc/nginx/sites-enabled/pocket
 systemctl start nginx
@@ -201,7 +202,3 @@ ufw allow 80
 ufw allow 443
 ufw allow 8081
 ufw allow 26656
-
-# Final setup
-pocket query height > /mnt/data/healthcheck.txt
-echo $DNS_HOSTNAME > /mnt/data/hostname.txt
