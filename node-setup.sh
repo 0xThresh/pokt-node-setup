@@ -6,7 +6,20 @@ useradd -m -g sudo -s /bin/bash pocket
 # Set required vars
 POKT_VERSION="RC-0.11.1" 
 DNS_HOSTNAME=$1
-read -sp "Enter the password to be used for the Pocket account: " POCKET_ACCOUNT_PASSWORD
+
+while true; do
+  read -sp "Enter the password to be used for the Pocket account: " POCKET_ACCOUNT_PASSWORD
+  echo
+
+  read -sp "Confirm password: " confirm
+  echo
+  
+  if [ "$password" = "$confirm" ]; then
+    break
+  else
+    echo "Passwords do not match! Please try again."
+  fi
+done
 
 # When using AWS, skip volume mount 
 mkdir /mnt/data
