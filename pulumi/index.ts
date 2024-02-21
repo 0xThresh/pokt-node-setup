@@ -114,7 +114,7 @@ const userData = userDataTemplate.replace("${DNS_HOSTNAME}", DNS_HOSTNAME);
 
 const instance = new aws.ec2.Instance("instance", {
     ami: ubuntuAMI, 
-    instanceType: "m6a.xlarge",
+    instanceType: "m6a.2xlarge",
     vpcSecurityGroupIds: [securityGroup.id], 
     subnetId: publicSubnetIds[0],
     //userData: userData.toString(),

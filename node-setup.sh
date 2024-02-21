@@ -14,7 +14,7 @@ while true; do
   read -sp "Confirm password: " confirm
   echo
   
-  if [ "$password" = "$confirm" ]; then
+  if [ "$POCKET_ACCOUNT_PASSWORD" = "$confirm" ]; then
     break
   else
     echo "Passwords do not match! Please try again."
@@ -63,7 +63,7 @@ cd .pocket/data
 
 # Download snapshot file in the background
 # TODO: Choose the file to download based on node type passed into script 
-#wget -c "https://pocket-snapshot.liquify.com/files/pruned/(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
+wget -c "https://pocket-snapshot.liquify.com/files/pruned/$(curl -s https://pocket-snapshot.liquify.com/files/pruned/latest.txt)" -O - | tar -xv -C /mnt/data/.pocket
 
 # Create Pocket account and set as validator
 echo "$POCKET_ACCOUNT_PASSWORD" | pocket accounts create
