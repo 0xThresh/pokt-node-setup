@@ -130,7 +130,7 @@ systemctl enable pocket.service
 systemctl start pocket.service
 
 # Register the cert with your domain
-certbot --nginx --domain pokt.$DNS_HOSTNAME --register-unsafely-without-email --no-redirect --agree-tos
+certbot --nginx --domain $DNS_HOSTNAME --register-unsafely-without-email --no-redirect --agree-tos
 
 # Create the required NGINX config 
 cat <<EOF > /etc/nginx/sites-available/pocket 
@@ -160,7 +160,7 @@ server {
 
     index index.html index.htm index.nginx-debian.html;
 
-    server_name pokt.$DNS_HOSTNAME;
+    server_name $DNS_HOSTNAME;
 
     location / {
         try_files $uri $uri/ =404;
@@ -169,8 +169,8 @@ server {
     listen [::]:443 ssl ipv6only=on;
     listen 443 ssl;
 
-    ssl_certificate /etc/letsencrypt/live/pokt.$DNS_HOSTNAME/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/pokt.$DNS_HOSTNAME/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/$DNS_HOSTNAME/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DNS_HOSTNAME/privkey.pem;
 
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
@@ -193,7 +193,7 @@ server {
 EOF
 
 systemctl stop nginx
-chown -R www-data /etc/letsencrypt/live/pokt.$DNS_HOSTNAME
+chown -R www-data /etc/letsencrypt/live/$DNS_HOSTNAME
 rm /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/pocket /etc/nginx/sites-enabled/pocket
 systemctl start nginx

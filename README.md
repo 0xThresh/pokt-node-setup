@@ -10,8 +10,8 @@ When I tried to sign up for Linode, I was immediately told I had to give more in
 
 ## Running the Script
 Copy the script to your Ubuntu instance. The script takes a single argument: the name of the DNS zone you plan to deploy a new record into. Usage can be seen with an example domain below:
-`sudo ./node-setup.sh example.com`
+`sudo ./node-setup.sh pokt001.example.com`
 
-This will automatically create the cert for `pokt.example.com`, but you've already created your DNS records prior to running the script. If you do not create the DNS record first, CertBot will fail to generate you a certificate, and the Nginx service will not come up correctly. 
+This will automatically create the cert for `pokt001.example.com`, but only if you've already created your DNS records prior to running the script. If you do not create the DNS record first, CertBot will fail to generate you a certificate, and the Nginx service will not come up correctly. 
 
 When you start the script, you will be asked to enter a password that will be used for the Pocket account that will be created. Make sure this is a strong password and that you can store the password in a secure location, as it is the password that would allow someone to extract your private key from your node. 
