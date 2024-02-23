@@ -1,0 +1,3 @@
+name: pokt-go
+runtime: go
+description: Pocket node for Go
