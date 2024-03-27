@@ -117,7 +117,7 @@ const instance = new aws.ec2.Instance("instance", {
     instanceType: "m6a.2xlarge",
     vpcSecurityGroupIds: [securityGroup.id], 
     subnetId: publicSubnetIds[0],
-    //userData: userData.toString(),
+    userData: userData.toString(),
     keyName: process.env.EC2_KEY_NAME,
     // TODO: Change root volume size based on node type 
     rootBlockDevice: {
@@ -128,6 +128,8 @@ const instance = new aws.ec2.Instance("instance", {
       "Name": "pokt"
   },
 });
+
+export const publicIp = instance.publicIp;
 
 // Route53 Record
 const r53_zone = aws.route53.getZone({
